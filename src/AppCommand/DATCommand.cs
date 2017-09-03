@@ -6,24 +6,43 @@ using System.Text;
 
 namespace DAT.AppCommand
 {
-    public sealed class DATCommand : Command, IDisposable
+    // TODO: Move strings to resources file
+    // TODO: Add DATTestModel here, can either be parsed from an optionsFile directive or from individual directives
+    public sealed class DATCommand : Command
     {
-        private bool disposed;
-
         public bool PerformanceProfile { get; private set; }
 
         public bool DataCompare { get; private set; }
 
         public LogLevel LoggingLevel { get; private set; }
 
-        public TextWriter LogWriter { get; private set; }
+        public string LogPath { get; private set; }
 
         public DATCommand()
         {
+            SetDefaults();
+
+            ConfigureOptions();
+        }
+
+        public override string PrintUsage()
+        {
+            var usageBuilder = new StringBuilder("DAT Tool v??")
+                .AppendLine()
+                .AppendLine(base.PrintUsage());
+
+            return usageBuilder.ToString();
+        }
+
+        private void SetDefaults()
+        {
             LoggingLevel = LogLevel.Minimal;
-
             ApplicationName = "dat";
+            LogPath = Path.Combine(Environment.CurrentDirectory, $"{ApplicationName}.log");
+        }
 
+        private void ConfigureOptions()
+        {
             HasOption("-p|--perf", param => PerformanceProfile = true, "Performance profile queries.");
 
             HasOption("-c|--compare", param => DataCompare = true, "Compare output from two queries to validate changes made still produce the same output.");
@@ -46,37 +65,12 @@ namespace DAT.AppCommand
 
             }, "Specifies the amount of information to display in the log.  You can specify the following verbosity levels: q[uiet], m[inimal], d[etailed], diag[nostic]");
 
+            HasOption("-l|--logPath", param => LogPath = param, $"The path to log based on the specified verbosity, default is the current directory {ApplicationName}.log");
+        }
+
+        private void ConfigureRules()
+        {
             HasRule(() => PerformanceProfile || DataCompare, "Performance profile and/or Data compare must be specified.");
-        }
-
-        public override string PrintUsage()
-        {
-            var usageBuilder = new StringBuilder("DAT Tool v??")
-                .AppendLine()
-                .AppendLine(base.PrintUsage());
-
-            return usageBuilder.ToString();
-        }
-
-        ~DATCommand()
-        {
-            Dispose(false);
-        }
-
-        public void Dispose(bool disposing)
-        {
-            if (disposing && !disposed)
-            {
-                disposed = true;
-
-                if (LogWriter != null)
-                    LogWriter.Dispose();
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
         }
     }
 }

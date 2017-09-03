@@ -1,5 +1,6 @@
 ﻿using DAT.AppCommand;
 using DAT.CommandParser;
+using DAT.Logging;
 using System;
 
 namespace DAT
@@ -14,7 +15,10 @@ namespace DAT
 
                 Parser.ParseArguments(command, args);
 
-                RunTest(command);
+                using (var logger = new SimpleLogger(command.LoggingLevel, command.LogPath))
+                {
+                    RunTest(command, logger);
+                }
             }
             catch (CommandParserException commandExc)
             {
@@ -26,8 +30,11 @@ namespace DAT
             }
         }
 
-        static void RunTest(DATCommand command)
+        static void RunTest(DATCommand command, ILogger logger)
         {
+            // create threads with delegate
+              // each delegate iterate for iterations variable
+                // parse performance stats, if compare perform data compare
 
         }
     }
