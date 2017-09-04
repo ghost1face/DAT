@@ -2,12 +2,14 @@
 using DAT.CommandParser;
 using DAT.Logging;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace DAT
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             try
             {
@@ -17,7 +19,7 @@ namespace DAT
 
                 using (var logger = new SimpleLogger(command.LoggingLevel, command.LogPath))
                 {
-                    RunTest(command, logger);
+                    await RunTest(command, logger);
                 }
             }
             catch (CommandParserException commandExc)
@@ -30,12 +32,41 @@ namespace DAT
             }
         }
 
-        static void RunTest(DATCommand command, ILogger logger)
+        static async Task RunTest(DATCommand command, ILogger logger)
         {
             // create threads with delegate
-              // each delegate iterate for iterations variable
-                // parse performance stats, if compare perform data compare
+            // each delegate iterate for iterations variable
+            // parse performance stats, if compare perform data compare
 
+            logger.Log(LogLevel.Detailed, $"Beginning test with {command.TestRunConfig.ThreadCount} threads, {command.TestRunConfig.Iterations} iterations.");
+
+            var tasks = new List<Task>();
+            for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
+            {
+                tasks.Add(RunThreadTest(command, logger));
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        static async Task RunThreadTest(DATCommand command, ILogger logger)
+        {
+            bool performanceTest = command.PerformanceProfile;
+            bool dataCompare = command.DataCompare;
+            int iterations = command.TestRunConfig.Iterations;
+
+            var tasks = new List<Task>();
+            for (int i = 0; i < iterations; i++)
+            {
+                tasks.Add(RunSqlQuery());
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        static Task RunSqlQuery()
+        {
+            return Task.FromResult(0);
         }
     }
 }

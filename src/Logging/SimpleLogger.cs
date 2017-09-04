@@ -7,17 +7,25 @@ namespace DAT.Logging
     {
         private readonly TextWriter textWriter;
         private readonly LogLevel loggerLevel;
+        private readonly object syncLock;
 
         public SimpleLogger(LogLevel logLevel, string logPath)
         {
             loggerLevel = logLevel;
             textWriter = File.CreateText(logPath);
+            syncLock = new object();
         }
 
         public void Log(LogLevel level, string message)
         {
             if ((int)loggerLevel >= (int)level)
-                textWriter.WriteLine($"{DateTime.Now}\t{level}\t{message}");
+            {
+                lock (syncLock)
+                {
+                    textWriter.WriteLine($"{DateTime.Now}\t{level}\t{message}");
+                    textWriter.Flush();
+                }
+            }
         }
 
         public void Dispose()
