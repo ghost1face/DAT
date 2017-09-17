@@ -18,7 +18,7 @@ namespace DAT.AppCommand
 
         public string LogPath { get; private set; }
 
-        public DATTestModel TestRunConfig { get; private set; }
+        public DATTestConfig TestRunConfig { get; private set; }
 
         public DATCommand()
         {
@@ -41,7 +41,7 @@ namespace DAT.AppCommand
             LoggingLevel = LogLevel.Minimal;
             ApplicationName = "dat";
             LogPath = Path.Combine(Environment.CurrentDirectory, $"{ApplicationName}.log");
-            TestRunConfig = new DATTestModel();
+            TestRunConfig = new DATTestConfig();
         }
 
         private void ConfigureOptions()

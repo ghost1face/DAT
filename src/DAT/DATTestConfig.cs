@@ -1,8 +1,8 @@
 ﻿namespace DAT
 {
-    public class DATTestModel
+    public class DATTestConfig
     {
-        public DATTestModel()
+        public DATTestConfig()
         {
             ThreadCount = 1;
             Iterations = 3;

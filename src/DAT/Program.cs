@@ -3,6 +3,7 @@ using DAT.CommandParser;
 using DAT.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace DAT
@@ -40,33 +41,72 @@ namespace DAT
 
             logger.Log(LogLevel.Detailed, $"Beginning test with {command.TestRunConfig.ThreadCount} threads, {command.TestRunConfig.Iterations} iterations.");
 
-            var tasks = new List<Task>();
-            for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
+            // Test Run #1
             {
-                tasks.Add(RunThreadTest(command, logger));
+                var tasks = new List<Task>();
+                var testRunParams = new DATTestParameters
+                {
+                    ConnectionString = command.TestRunConfig.Test1ConnectionString,
+                    DataCompare = command.DataCompare,
+                    Iterations = command.TestRunConfig.Iterations,
+                    PerformanceProfile = command.PerformanceProfile,
+                    SqlQuery = ResolveQuery(command.TestRunConfig.Test1SQL)
+                };
+
+                for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
+                {
+                    tasks.Add(RunThreadTest(testRunParams, logger));
+                }
+
+                await Task.WhenAll(tasks);
             }
 
-            await Task.WhenAll(tasks);
+            // Test Run #2
+            {
+                var tasks = new List<Task>();
+                var testRunParams = new DATTestParameters
+                {
+                    ConnectionString = command.TestRunConfig.Test2ConnectionString,
+                    DataCompare = command.DataCompare,
+                    Iterations = command.TestRunConfig.Iterations,
+                    PerformanceProfile = command.PerformanceProfile,
+                    SqlQuery = ResolveQuery(command.TestRunConfig.Test2SQL)
+                };
+
+                for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
+                {
+                    tasks.Add(RunThreadTest(testRunParams, logger));
+                }
+
+                await Task.WhenAll(tasks);
+            }
         }
 
-        static async Task RunThreadTest(DATCommand command, ILogger logger)
+        static async Task RunThreadTest(DATTestParameters parameters, ILogger logger)
         {
-            bool performanceTest = command.PerformanceProfile;
-            bool dataCompare = command.DataCompare;
-            int iterations = command.TestRunConfig.Iterations;
+            bool performanceTest = parameters.PerformanceProfile;
+            bool dataCompare = parameters.DataCompare;
+            int iterations = parameters.Iterations;
 
             var tasks = new List<Task>();
             for (int i = 0; i < iterations; i++)
             {
-                tasks.Add(RunSqlQuery());
+                tasks.Add(RunSqlQuery(parameters.SqlQuery, parameters.ConnectionString, performanceTest, dataCompare));
             }
 
             await Task.WhenAll(tasks);
         }
 
-        static Task RunSqlQuery()
+        static Task RunSqlQuery(string query, string connectionString, bool performanceTest, bool dataCompare)
         {
             return Task.FromResult(0);
+        }
+
+        static string ResolveQuery(string pathOrQuery)
+        {
+            if (File.Exists(pathOrQuery))
+                return File.ReadAllText(pathOrQuery);
+            return pathOrQuery;
         }
     }
 }
