@@ -5,6 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Data;
+using System.Data.Common;
+using System.Data.SqlClient;
+using System.Dynamic;
 
 namespace DAT
 {
@@ -97,9 +101,33 @@ namespace DAT
             await Task.WhenAll(tasks);
         }
 
-        static Task RunSqlQuery(string query, string connectionString, bool performanceTest, bool dataCompare)
+        static async Task RunSqlQuery(string query, string connectionString, bool performanceTest, bool dataCompare)
         {
-            return Task.FromResult(0);
+            using (DbConnection connection = new SqlConnection(connectionString))
+            using (DbCommand command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = query;
+
+                await connection.OpenAsync();
+
+                List<Dictionary<string, object>> results = new List<Dictionary<string, object>>();
+                using (DbDataReader reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var record = new Dictionary<string, object>();
+                        for (var i = 0; i < reader.FieldCount; i++)
+                        {
+                            var fieldName = reader.GetName(i);
+                            var fieldValue = reader.GetValue(i);
+                            record.Add(fieldName, fieldValue);
+                        }
+
+                        results.Add(record);
+                    }
+                }
+            }
         }
 
         static string ResolveQuery(string pathOrQuery)
