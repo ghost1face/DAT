@@ -3,19 +3,23 @@ using DAT.CommandParser;
 using DAT.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
-using System.Dynamic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DAT
 {
     class Program
     {
+        private static readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
+
         static async Task Main(string[] args)
         {
+            Console.CancelKeyPress += Console_CancelKeyPress;
+
             try
             {
                 var command = new DATCommand();
@@ -24,7 +28,7 @@ namespace DAT
 
                 using (var logger = new SimpleLogger(command.LoggingLevel, command.LogPath))
                 {
-                    await RunTest(command, logger);
+                    await RunTest(command, logger, cancellationToken: tokenSource.Token);
                 }
             }
             catch (CommandParserException commandExc)
@@ -37,7 +41,12 @@ namespace DAT
             }
         }
 
-        static async Task RunTest(DATCommand command, ILogger logger)
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            tokenSource.CancelAfter(2000);
+        }
+
+        private static async Task RunTest(DATCommand command, ILogger logger, CancellationToken cancellationToken)
         {
             // create threads with delegate
             // each delegate iterate for iterations variable
@@ -59,7 +68,7 @@ namespace DAT
 
                 for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
                 {
-                    tasks.Add(RunThreadTest(testRunParams, logger));
+                    tasks.Add(RunThreadTest(testRunParams, logger, cancellationToken: cancellationToken));
                 }
 
                 await Task.WhenAll(tasks);
@@ -79,14 +88,14 @@ namespace DAT
 
                 for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
                 {
-                    tasks.Add(RunThreadTest(testRunParams, logger));
+                    tasks.Add(RunThreadTest(testRunParams, logger, cancellationToken: cancellationToken));
                 }
 
                 await Task.WhenAll(tasks);
             }
         }
 
-        static async Task RunThreadTest(DATTestParameters parameters, ILogger logger)
+        private static async Task RunThreadTest(DATTestParameters parameters, ILogger logger, CancellationToken cancellationToken)
         {
             bool performanceTest = parameters.PerformanceProfile;
             bool dataCompare = parameters.DataCompare;
@@ -95,13 +104,13 @@ namespace DAT
             var tasks = new List<Task>();
             for (int i = 0; i < iterations; i++)
             {
-                tasks.Add(RunSqlQuery(parameters.SqlQuery, parameters.ConnectionString, performanceTest, dataCompare));
+                tasks.Add(RunSqlQuery(parameters.SqlQuery, parameters.ConnectionString, performanceTest, dataCompare, cancellationToken: cancellationToken));
             }
 
             await Task.WhenAll(tasks);
         }
 
-        static async Task RunSqlQuery(string query, string connectionString, bool performanceTest, bool dataCompare)
+        private static async Task RunSqlQuery(string query, string connectionString, bool performanceTest, bool dataCompare, CancellationToken cancellationToken)
         {
             using (DbConnection connection = new SqlConnection(connectionString))
             using (DbCommand command = connection.CreateCommand())
@@ -109,28 +118,33 @@ namespace DAT
                 command.CommandType = CommandType.Text;
                 command.CommandText = query;
 
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken: cancellationToken);
 
-                List<Dictionary<string, object>> results = new List<Dictionary<string, object>>();
-                using (DbDataReader reader = await command.ExecuteReaderAsync())
+                List<List<Dictionary<string, object>>> results = new List<List<Dictionary<string, object>>>();
+                using (DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken: cancellationToken))
                 {
-                    while (await reader.ReadAsync())
+                    do
                     {
-                        var record = new Dictionary<string, object>();
-                        for (var i = 0; i < reader.FieldCount; i++)
+                        var resultSet = new List<Dictionary<string, object>>();
+                        while (await reader.ReadAsync(cancellationToken: cancellationToken))
                         {
-                            var fieldName = reader.GetName(i);
-                            var fieldValue = reader.GetValue(i);
-                            record.Add(fieldName, fieldValue);
-                        }
+                            var record = new Dictionary<string, object>();
+                            for (var i = 0; i < reader.FieldCount; i++)
+                            {
+                                var fieldName = reader.GetName(i);
+                                var fieldValue = reader.GetValue(i);
+                                record.Add(fieldName, fieldValue);
+                            }
 
-                        results.Add(record);
-                    }
+                            resultSet.Add(record);
+                        }
+                        results.Add(resultSet);
+                    } while (await reader.NextResultAsync(cancellationToken: cancellationToken));
                 }
             }
         }
 
-        static string ResolveQuery(string pathOrQuery)
+        private static string ResolveQuery(string pathOrQuery)
         {
             if (File.Exists(pathOrQuery))
                 return File.ReadAllText(pathOrQuery);
