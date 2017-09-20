@@ -8,7 +8,13 @@ namespace DAT
     {
         public bool AreEqual<T>(T item1, T item2)
         {
-            throw new NotImplementedException();
+            if ((item1 == null && item2 != null) || (item1 != null && item2 == null))
+                return false;
+
+            if (item1 == null && item2 == null)
+                return true;
+
+            return item1.Equals(item2) || QuickDeepCompare(item1, item2);
         }
 
         public bool QuickDeepCompare(object item1, object item2)
