@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -93,39 +94,58 @@ namespace DAT
 
                 await Task.WhenAll(tasks);
             }
+
+            // now we can compare performance or data
         }
 
-        private static async Task RunThreadTest(DATTestParameters parameters, ILogger logger, CancellationToken cancellationToken)
+        private static async Task<List<DATCommandResult>> RunThreadTest(DATTestParameters parameters, ILogger logger, CancellationToken cancellationToken)
         {
             bool performanceTest = parameters.PerformanceProfile;
             bool dataCompare = parameters.DataCompare;
             int iterations = parameters.Iterations;
 
-            var tasks = new List<Task>();
+            var tasks = new List<Task<DATCommandResult>>();
             for (int i = 0; i < iterations; i++)
             {
                 tasks.Add(RunSqlQuery(parameters.SqlQuery, parameters.ConnectionString, performanceTest, dataCompare, cancellationToken: cancellationToken));
             }
 
             await Task.WhenAll(tasks);
+
+            return tasks.Select(i => i.Result).ToList();
         }
 
-        private static async Task RunSqlQuery(string query, string connectionString, bool performanceTest, bool dataCompare, CancellationToken cancellationToken)
+        private static async Task<DATCommandResult> RunSqlQuery(string query, string connectionString, bool performanceTest, bool dataCompare, CancellationToken cancellationToken)
         {
-            using (DbConnection connection = new SqlConnection(connectionString))
+            var result = new DATCommandResult
+            {
+                PerformanceResults = new Dictionary<string, object>(),
+                ResultSet = new List<Dictionary<string, object>>()
+            };
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
             using (DbCommand command = connection.CreateCommand())
             {
                 command.CommandType = CommandType.Text;
                 command.CommandText = query;
 
-                await connection.OpenAsync(cancellationToken: cancellationToken);
+                // TODO: might not need this part
+                if (performanceTest)
+                {
+                    connection.StatisticsEnabled = true;
 
-                List<List<Dictionary<string, object>>> results = new List<List<Dictionary<string, object>>>();
+                    connection.InfoMessage += new SqlInfoMessageEventHandler((sender, data) =>
+                    {
+                        result.PerformanceResults.Add(data.Source, data.Message);
+                    });
+                }
+
+                await connection.OpenAsync(cancellationToken: cancellationToken);
+                
                 using (DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken: cancellationToken))
                 {
                     do
                     {
-                        var resultSet = new List<Dictionary<string, object>>();
                         while (await reader.ReadAsync(cancellationToken: cancellationToken))
                         {
                             var record = new Dictionary<string, object>();
@@ -136,12 +156,25 @@ namespace DAT
                                 record.Add(fieldName, fieldValue);
                             }
 
-                            resultSet.Add(record);
+                            result.ResultSet.Add(record);
                         }
-                        results.Add(resultSet);
+
                     } while (await reader.NextResultAsync(cancellationToken: cancellationToken));
                 }
+
+                // TODO: Need parsing here ?
+                if (performanceTest)
+                {
+                    var stats = connection.RetrieveStatistics();
+
+                    foreach (string statKey in stats.Keys)
+                    {
+                        result.PerformanceResults.Add(statKey, stats[statKey]);
+                    }
+                }
             }
+
+            return result;
         }
 
         private static string ResolveQuery(string pathOrQuery)
