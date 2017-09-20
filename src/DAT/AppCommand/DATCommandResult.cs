@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace DAT.AppCommand
 {
     public class DATCommandResult
     {
-        public List<Dictionary<string, object>> ResultSet { get; set; }
+        public List<List<Dictionary<string, object>>> ResultSets { get; set; }
         public Dictionary<string, object> PerformanceResults { get; set; }
     }
 }

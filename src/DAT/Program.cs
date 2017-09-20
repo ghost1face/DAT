@@ -120,7 +120,7 @@ namespace DAT
             var result = new DATCommandResult
             {
                 PerformanceResults = new Dictionary<string, object>(),
-                ResultSet = new List<Dictionary<string, object>>()
+                ResultSets = new List<List<Dictionary<string, object>>>()
             };
 
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -141,11 +141,12 @@ namespace DAT
                 }
 
                 await connection.OpenAsync(cancellationToken: cancellationToken);
-                
+
                 using (DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken: cancellationToken))
                 {
                     do
                     {
+                        var resultSet = new List<Dictionary<string, object>>();
                         while (await reader.ReadAsync(cancellationToken: cancellationToken))
                         {
                             var record = new Dictionary<string, object>();
@@ -156,8 +157,9 @@ namespace DAT
                                 record.Add(fieldName, fieldValue);
                             }
 
-                            result.ResultSet.Add(record);
+                            resultSet.Add(record);
                         }
+                        result.ResultSets.Add(resultSet);
 
                     } while (await reader.NextResultAsync(cancellationToken: cancellationToken));
                 }
