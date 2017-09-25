@@ -28,7 +28,7 @@ namespace DAT.Providers.Sql
                     break;
             }
 
-            var languageResourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, language, ".json");
+            var languageResourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Providers/Sql/Resources", $"{language}.json");
             return File.ReadAllText(languageResourcePath);
         }
 
@@ -40,11 +40,15 @@ namespace DAT.Providers.Sql
         public string ReadAhead => deserializedLang.readahead;
         public string LOBLogical => deserializedLang.loblogical;
         public string LOBPhysical => deserializedLang.lobphysical;
-        public string LOBReadAhead => deserializedLang.lobgreadahead;
+        public string LOBReadAhead => deserializedLang.lobreadahead;
         public string ExecutionTime => deserializedLang.executiontime;
         public string CompileTime => deserializedLang.compiletime;
         public string RowsAffected => deserializedLang.rowsaffected;
         public string ErrorMsg => deserializedLang.errormsg;
+        public string CPUTime => deserializedLang.cputime;
+        public string ElapsedTime => deserializedLang.elapsedtime;
+        public string Milliseconds => deserializedLang.milliseconds;
+        public string HeaderRowsAffected => deserializedLang.headerrowsaffected;
         //public string HeaderRowNum => deserializedLang.headerrownum;
         //public string HeaderTable => deserializedLang.headertable;
         //public string HeaderScan => deserializedLang.headerscan;
