@@ -57,7 +57,7 @@ namespace DAT
 
             // Test Run #1
             {
-                var tasks = new List<Task>();
+                var tasks = new List<Task<List<DATCommandResult>>>();
                 var testRunParams = new DATTestParameters
                 {
                     ConnectionString = command.TestRunConfig.Test1ConnectionString,
@@ -77,7 +77,7 @@ namespace DAT
 
             // Test Run #2
             {
-                var tasks = new List<Task>();
+                var tasks = new List<Task<List<DATCommandResult>>>();
                 var testRunParams = new DATTestParameters
                 {
                     ConnectionString = command.TestRunConfig.Test2ConnectionString,
