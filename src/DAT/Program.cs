@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Data.SqlClient;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -58,15 +57,17 @@ namespace DAT
 
             logger.Log(LogLevel.Detailed, $"Beginning test with {command.TestRunConfig.ThreadCount} threads, {command.TestRunConfig.Iterations} iterations.");
 
+            var dataCompare = command.DataCompare;
+            var performanceProfile = command.PerformanceProfile;
+
+            IEnumerable<DATCommandResult>[] test1Results;
             // Test Run #1
             {
-                var tasks = new List<Task<List<DATCommandResult>>>();
+                var tasks = new List<Task<IEnumerable<DATCommandResult>>>();
                 var testRunParams = new DATTestParameters
                 {
                     ConnectionString = command.TestRunConfig.Test1ConnectionString,
-                    DataCompare = command.DataCompare,
                     Iterations = command.TestRunConfig.Iterations,
-                    PerformanceProfile = command.PerformanceProfile,
                     SqlQuery = ResolveQuery(command.TestRunConfig.Test1SQL)
                 };
 
@@ -75,18 +76,17 @@ namespace DAT
                     tasks.Add(RunThreadTest(testRunParams, logger, cancellationToken: cancellationToken));
                 }
 
-                await Task.WhenAll(tasks);
+                test1Results = await Task.WhenAll(tasks);
             }
 
+            IEnumerable<DATCommandResult>[] test2Results;
             // Test Run #2
             {
-                var tasks = new List<Task<List<DATCommandResult>>>();
+                var tasks = new List<Task<IEnumerable<DATCommandResult>>>();
                 var testRunParams = new DATTestParameters
                 {
                     ConnectionString = command.TestRunConfig.Test2ConnectionString,
-                    DataCompare = command.DataCompare,
                     Iterations = command.TestRunConfig.Iterations,
-                    PerformanceProfile = command.PerformanceProfile,
                     SqlQuery = ResolveQuery(command.TestRunConfig.Test2SQL)
                 };
 
@@ -95,30 +95,31 @@ namespace DAT
                     tasks.Add(RunThreadTest(testRunParams, logger, cancellationToken: cancellationToken));
                 }
 
-                await Task.WhenAll(tasks);
+                test2Results = await Task.WhenAll(tasks);
             }
 
             // now we can compare performance or data
+            //
+            // 
+            // TODO: Compare results and determine output
         }
 
-        private static async Task<List<DATCommandResult>> RunThreadTest(DATTestParameters parameters, ILogger logger, CancellationToken cancellationToken)
+        private static async Task<IEnumerable<DATCommandResult>> RunThreadTest(DATTestParameters parameters, ILogger logger, CancellationToken cancellationToken)
         {
-            bool performanceTest = parameters.PerformanceProfile;
-            bool dataCompare = parameters.DataCompare;
             int iterations = parameters.Iterations;
 
             var tasks = new List<Task<DATCommandResult>>();
             for (int i = 0; i < iterations; i++)
             {
-                tasks.Add(RunSqlQuery(parameters.SqlQuery, parameters.ConnectionString, performanceTest, dataCompare, cancellationToken: cancellationToken));
+                tasks.Add(RunSqlQuery(parameters.SqlQuery, parameters.ConnectionString, cancellationToken: cancellationToken));
             }
 
-            await Task.WhenAll(tasks);
+            var queryResults = await Task.WhenAll(tasks);
 
-            return tasks.Select(i => i.Result).ToList();
+            return queryResults.ToList();
         }
 
-        private static async Task<DATCommandResult> RunSqlQuery(string query, string connectionString, bool performanceTest, bool dataCompare, CancellationToken cancellationToken)
+        private static async Task<DATCommandResult> RunSqlQuery(string query, string connectionString, CancellationToken cancellationToken)
         {
             var result = new DATCommandResult
             {
@@ -160,67 +161,6 @@ namespace DAT
             }
 
             return result;
-
-            //var result = new DATCommandResult
-            //{
-            //    PerformanceResults = new Dictionary<string, object>(),
-            //    ResultSets = new List<List<Dictionary<string, object>>>()
-            //};
-
-            //using (SqlConnection connection = new SqlConnection(connectionString))
-            //using (DbCommand command = connection.CreateCommand())
-            //{
-            //    command.CommandType = CommandType.Text;
-            //    command.CommandText = query;
-
-            //    // TODO: might not need this part
-            //    if (performanceTest)
-            //    {
-            //        connection.StatisticsEnabled = true;
-
-            //        connection.InfoMessage += new SqlInfoMessageEventHandler((sender, data) =>
-            //        {
-            //            result.PerformanceResults.Add(data.Source, data.Message);
-            //        });
-            //    }
-
-            //    await connection.OpenAsync(cancellationToken: cancellationToken);
-
-            //    using (DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken: cancellationToken))
-            //    {
-            //        do
-            //        {
-            //            var resultSet = new List<Dictionary<string, object>>();
-            //            while (await reader.ReadAsync(cancellationToken: cancellationToken))
-            //            {
-            //                var record = new Dictionary<string, object>();
-            //                for (var i = 0; i < reader.FieldCount; i++)
-            //                {
-            //                    var fieldName = reader.GetName(i);
-            //                    var fieldValue = reader.GetValue(i);
-            //                    record.Add(fieldName, fieldValue);
-            //                }
-
-            //                resultSet.Add(record);
-            //            }
-            //            result.ResultSets.Add(resultSet);
-
-            //        } while (await reader.NextResultAsync(cancellationToken: cancellationToken));
-            //    }
-
-            //    // TODO: Need parsing here ?
-            //    if (performanceTest)
-            //    {
-            //        var stats = connection.RetrieveStatistics();
-
-            //        foreach (string statKey in stats.Keys)
-            //        {
-            //            result.PerformanceResults.Add(statKey, stats[statKey]);
-            //        }
-            //    }
-            //}
-
-            //return result;
         }
 
         private static string ResolveQuery(string pathOrQuery)
