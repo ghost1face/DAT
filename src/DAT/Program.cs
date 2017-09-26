@@ -1,11 +1,14 @@
 ﻿using DAT.AppCommand;
 using DAT.CommandParser;
+using DAT.Extensions;
 using DAT.Logging;
+using DAT.Providers.Sql;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -119,34 +122,23 @@ namespace DAT
         {
             var result = new DATCommandResult
             {
-                PerformanceResults = new Dictionary<string, object>(),
-                ResultSets = new List<List<Dictionary<string, object>>>()
+                QueryStatistics = new List<object>(),
+                ResultSets = new List<List<ExpandoObject>>()
             };
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            using (DbCommand command = connection.CreateCommand())
+            using (var dbConnectionWrapper = new SqlConnectionWrapper(connectionString))
+            using (var dbCommandWrapper = dbConnectionWrapper.CreateCommand())
             {
-                command.CommandType = CommandType.Text;
-                command.CommandText = query;
+                dbCommandWrapper.CommandType = CommandType.Text;
+                dbCommandWrapper.CommandText = query;
 
-                // TODO: might not need this part
-                if (performanceTest)
-                {
-                    connection.StatisticsEnabled = true;
+                await dbConnectionWrapper.OpenAsync(cancellationToken: cancellationToken);
 
-                    connection.InfoMessage += new SqlInfoMessageEventHandler((sender, data) =>
-                    {
-                        result.PerformanceResults.Add(data.Source, data.Message);
-                    });
-                }
-
-                await connection.OpenAsync(cancellationToken: cancellationToken);
-
-                using (DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken: cancellationToken))
+                using (DbDataReader reader = await dbCommandWrapper.ExecuteReaderAsync(cancellationToken: cancellationToken))
                 {
                     do
                     {
-                        var resultSet = new List<Dictionary<string, object>>();
+                        var resultSet = new List<ExpandoObject>();
                         while (await reader.ReadAsync(cancellationToken: cancellationToken))
                         {
                             var record = new Dictionary<string, object>();
@@ -157,26 +149,78 @@ namespace DAT
                                 record.Add(fieldName, fieldValue);
                             }
 
-                            resultSet.Add(record);
+                            resultSet.Add(record.ToExpando());
                         }
                         result.ResultSets.Add(resultSet);
-
-                    } while (await reader.NextResultAsync(cancellationToken: cancellationToken));
-                }
-
-                // TODO: Need parsing here ?
-                if (performanceTest)
-                {
-                    var stats = connection.RetrieveStatistics();
-
-                    foreach (string statKey in stats.Keys)
-                    {
-                        result.PerformanceResults.Add(statKey, stats[statKey]);
                     }
+                    while (await reader.NextResultAsync(cancellationToken: cancellationToken));
                 }
+
+                result.QueryStatistics = dbCommandWrapper.RetrieveStats().ToList();
             }
 
             return result;
+
+            //var result = new DATCommandResult
+            //{
+            //    PerformanceResults = new Dictionary<string, object>(),
+            //    ResultSets = new List<List<Dictionary<string, object>>>()
+            //};
+
+            //using (SqlConnection connection = new SqlConnection(connectionString))
+            //using (DbCommand command = connection.CreateCommand())
+            //{
+            //    command.CommandType = CommandType.Text;
+            //    command.CommandText = query;
+
+            //    // TODO: might not need this part
+            //    if (performanceTest)
+            //    {
+            //        connection.StatisticsEnabled = true;
+
+            //        connection.InfoMessage += new SqlInfoMessageEventHandler((sender, data) =>
+            //        {
+            //            result.PerformanceResults.Add(data.Source, data.Message);
+            //        });
+            //    }
+
+            //    await connection.OpenAsync(cancellationToken: cancellationToken);
+
+            //    using (DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken: cancellationToken))
+            //    {
+            //        do
+            //        {
+            //            var resultSet = new List<Dictionary<string, object>>();
+            //            while (await reader.ReadAsync(cancellationToken: cancellationToken))
+            //            {
+            //                var record = new Dictionary<string, object>();
+            //                for (var i = 0; i < reader.FieldCount; i++)
+            //                {
+            //                    var fieldName = reader.GetName(i);
+            //                    var fieldValue = reader.GetValue(i);
+            //                    record.Add(fieldName, fieldValue);
+            //                }
+
+            //                resultSet.Add(record);
+            //            }
+            //            result.ResultSets.Add(resultSet);
+
+            //        } while (await reader.NextResultAsync(cancellationToken: cancellationToken));
+            //    }
+
+            //    // TODO: Need parsing here ?
+            //    if (performanceTest)
+            //    {
+            //        var stats = connection.RetrieveStatistics();
+
+            //        foreach (string statKey in stats.Keys)
+            //        {
+            //            result.PerformanceResults.Add(statKey, stats[statKey]);
+            //        }
+            //    }
+            //}
+
+            //return result;
         }
 
         private static string ResolveQuery(string pathOrQuery)

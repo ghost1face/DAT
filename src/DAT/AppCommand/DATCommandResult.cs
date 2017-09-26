@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Dynamic;
 
 namespace DAT.AppCommand
 {
     public class DATCommandResult
     {
-        public List<List<Dictionary<string, object>>> ResultSets { get; set; }
-        public Dictionary<string, object> PerformanceResults { get; set; }
+        public List<List<ExpandoObject>> ResultSets { get; set; }
+        public List<object> QueryStatistics { get; set; }
     }
 }
