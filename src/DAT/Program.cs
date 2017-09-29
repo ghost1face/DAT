@@ -102,6 +102,10 @@ namespace DAT
             //
             // 
             // TODO: Compare results and determine output
+            if (performanceProfile)
+            {
+
+            }
         }
 
         private static async Task<IEnumerable<DATCommandResult>> RunThreadTest(DATTestParameters parameters, ILogger logger, CancellationToken cancellationToken)

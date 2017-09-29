@@ -1,5 +1,6 @@
 ﻿using DAT.CommandParser;
 using DAT.Logging;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text;
@@ -41,7 +42,7 @@ namespace DAT.AppCommand
             LoggingLevel = LogLevel.Minimal;
             ApplicationName = "dat";
             LogPath = Path.Combine(Environment.CurrentDirectory, $"{ApplicationName}.log");
-            TestRunConfig = new DATTestConfig();
+            TestRunConfig = null;
         }
 
         private void ConfigureOptions()
@@ -69,10 +70,22 @@ namespace DAT.AppCommand
             }, "Specifies the amount of information to display in the log.  You can specify the following verbosity levels: q[uiet], m[inimal], d[etailed], diag[nostic]");
 
             HasOption("-l|--logPath", param => LogPath = param, $"The path to log based on the specified verbosity, default is the current directory {ApplicationName}.log");
+
+            HasOption("-d|--datFile", param =>
+            {
+                var filePath = param;
+                if (!File.Exists(filePath))
+                    throw new Exception("datfile does not exist.");
+
+                var configFileContents = File.ReadAllText(filePath);
+
+                TestRunConfig = JsonConvert.DeserializeObject<DATTestConfig>(configFileContents);
+            }, "Specifies the configuration file to execute");
         }
 
         private void ConfigureRules()
         {
+            HasRule(() => TestRunConfig != null, "Option -d|--datFile must be provided");
             HasRule(() => PerformanceProfile || DataCompare, "Performance profile and/or Data compare must be specified.");
         }
     }

@@ -1,0 +1,8 @@
+{
+  "threadCount": 1,
+  "iterations": 2,
+  "test1Sql": "SELECT * FROM dbo.Table1 WHERE Name = 'Joe'",
+  "test1ConnectionString": "BLAH",
+  "test2Sql": "SELECT * FROM dbo.Table2 WHERE Id = 1",
+  "test2ConnectionString":  "BLAH"
+}
