@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace DAT.Providers.Sql
@@ -25,16 +23,12 @@ namespace DAT.Providers.Sql
 
         public IEnumerable<QueryStats> ParseStatistics(string txt)
         {
-            var lines = txt.Split(Environment.NewLine);
+            var lines = txt.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
             var isExecution = false;
             var inTable = false;
             var isCompile = false;
             var isError = false;
-            //var tableCount = 0;
             var queryStatistics = new List<QueryStats>();
-            //var tableIOResult = new List<IOStats>();
-            //var executionTimes = new List<TimeStats>();
-            //var compileTimes = new List<TimeStats>();
 
             var rowType = StatisticsRowType.None;
             var queryStats = NewStats();
@@ -54,7 +48,6 @@ namespace DAT.Providers.Sql
                         }
                         else
                         {
-                            //tableCount++;
                             inTable = true;
                             ProcessIOTableRow(line, queryStats.IOStatistics);
                         }
@@ -75,7 +68,10 @@ namespace DAT.Providers.Sql
                         if (isCompile)
                         {
                             var ct = ProcessTime(line);
-                            queryStats.CompileTimes.Add(ct);
+                            if (queryStatistics.Count == 0)
+                                queryStats.CompileTimes.Add(ct);
+                            else
+                                queryStatistics[queryStatistics.Count - 1].CompileTimes.Add(ct);
                         }
 
                         isCompile = !isCompile;
@@ -265,6 +261,5 @@ namespace DAT.Providers.Sql
 
             return returnValue;
         }
-
     }
 }

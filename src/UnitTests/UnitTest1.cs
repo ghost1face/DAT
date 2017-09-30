@@ -48,5 +48,68 @@ SQL Server parse and compile time:
 
             var results = parser.ParseStatistics(statsString);
         }
+
+        [TestMethod]
+        public void ParseStats2()
+        {
+            var statsString = @"
+(9 rows affected)
+Table 'Users'. Scan count 1, logical reads 13, physical reads 0, read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
+
+(1 row affected)
+
+ SQL Server Execution Times:
+   CPU time = 0 ms,  elapsed time = 47 ms.
+
+(9 rows affected)
+Table 'Workfile'. Scan count 0, logical reads 0, physical reads 0, read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
+Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
+Table 'Users'. Scan count 1, logical reads 13, physical reads 0, read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
+
+(1 row affected)
+
+ SQL Server Execution Times:
+   CPU time = 0 ms,  elapsed time = 245 ms.
+SQL Server parse and compile time: 
+   CPU time = 0 ms, elapsed time = 0 ms.
+
+ SQL Server Execution Times:
+   CPU time = 0 ms,  elapsed time = 0 ms.
+";
+            var parser = new StatisticsParser(LanguageType.English);
+
+            var results = parser.ParseStatistics(statsString);
+        }
+
+        [TestMethod]
+        public void ParseStats3()
+        {
+            var statsString = @"SQL Server parse and compile time: 
+   CPU time = 0 ms, elapsed time = 0 ms.
+
+ SQL Server Execution Times:
+   CPU time = 0 ms,  elapsed time = 0 ms.
+SQL Server parse and compile time: 
+   CPU time = 0 ms, elapsed time = 0 ms.
+
+(9 rows affected)
+Table 'Workfile'. Scan count 0, logical reads 0, physical reads 0, read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
+Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
+Table 'Users'. Scan count 1, logical reads 13, physical reads 0, read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
+
+(1 row affected)
+
+ SQL Server Execution Times:
+   CPU time = 0 ms,  elapsed time = 153 ms.
+SQL Server parse and compile time: 
+   CPU time = 0 ms, elapsed time = 0 ms.
+
+ SQL Server Execution Times:
+   CPU time = 0 ms,  elapsed time = 0 ms.";
+
+            var parser = new StatisticsParser(LanguageType.English);
+
+            var results = parser.ParseStatistics(statsString);
+        }
     }
 }

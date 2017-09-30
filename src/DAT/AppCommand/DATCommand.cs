@@ -26,6 +26,7 @@ namespace DAT.AppCommand
             SetDefaults();
 
             ConfigureOptions();
+            ConfigureRules();
         }
 
         public override string PrintUsage()

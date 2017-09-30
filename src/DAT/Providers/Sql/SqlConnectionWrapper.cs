@@ -36,12 +36,24 @@ namespace DAT.Providers.Sql
 
         public override void Open()
         {
-            this.Open();
+            sqlConnection.Open();
+
+            var command = sqlConnection.CreateCommand();
+            command.CommandText = "SET STATISTICS IO ON; SET STATISTICS TIME ON;";
+
+            command.ExecuteNonQuery();
         }
 
         public override Task OpenAsync(CancellationToken cancellationToken)
         {
-            return this.OpenAsync(cancellationToken: cancellationToken);
+            return sqlConnection.OpenAsync(cancellationToken: cancellationToken)
+                .ContinueWith(async t =>
+                {
+                    var command = sqlConnection.CreateCommand();
+                    command.CommandText = "SET STATISTICS IO ON; SET STATISTICS TIME ON;";
+
+                    await command.ExecuteNonQueryAsync();
+                }).Unwrap();
         }
 
         protected override void Dispose(bool disposing)
@@ -55,6 +67,8 @@ namespace DAT.Providers.Sql
             }
 
             base.Dispose(disposing);
+
+            disposed = true;
         }
     }
 }
