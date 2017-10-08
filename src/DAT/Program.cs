@@ -104,7 +104,23 @@ namespace DAT
             // TODO: Compare results and determine output
             if (performanceProfile)
             {
-
+                test1Results.SelectMany(t => t)
+                    .SelectMany(t => t.QueryStatistics)
+                    .Cast<QueryStats>()
+                    .Select(r => new
+                    {
+                        CPUCompileTime = r.CompileTimes.Sum(i => i.CPU),
+                        ElapsedCompileTime = r.CompileTimes.Sum(i => i.Elapsed),
+                        CPUEExecutionTime = r.ExecutionTimes.Sum(i => i.CPU),
+                        ElapsedExecutionTime = r.ExecutionTimes.Sum( i=> i.Elapsed),
+                        
+                    })
+                    .ToList();
+                    //.Aggregate((previous, next) =>
+                    //{
+                    //    previous.
+                    //});
+                    
             }
         }
 
