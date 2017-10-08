@@ -104,23 +104,88 @@ namespace DAT
             // TODO: Compare results and determine output
             if (performanceProfile)
             {
-                test1Results.SelectMany(t => t)
+                var test1Totals = test1Results.SelectMany(t => t)
                     .SelectMany(t => t.QueryStatistics)
                     .Cast<QueryStats>()
-                    .Select(r => new
+                    .Select(r => new QueryStatTotals
                     {
                         CPUCompileTime = r.CompileTimes.Sum(i => i.CPU),
                         ElapsedCompileTime = r.CompileTimes.Sum(i => i.Elapsed),
-                        CPUEExecutionTime = r.ExecutionTimes.Sum(i => i.CPU),
-                        ElapsedExecutionTime = r.ExecutionTimes.Sum( i=> i.Elapsed),
-                        
+                        CPUExecutionTime = r.ExecutionTimes.Sum(i => i.CPU),
+                        ElapsedExecutionTime = r.ExecutionTimes.Sum(i => i.Elapsed),
+                        Scan = r.IOStatistics.Sum(i => i.Scan),
+                        Physical = r.IOStatistics.Sum(i => i.Physical),
+                        Logical = r.IOStatistics.Sum(i => i.Logical),
+                        LobLogical = r.IOStatistics.Sum(i => i.LobLogical),
+                        LobPhysical = r.IOStatistics.Sum(i => i.LobPhysical),
+                        LobReadAhead = r.IOStatistics.Sum(i => i.LobReadAhead),
+                        PercentRead = r.IOStatistics.Sum(i => i.PercentRead),
+                        ReadAhead = r.IOStatistics.Sum(i => i.ReadAhead)
                     })
-                    .ToList();
-                    //.Aggregate((previous, next) =>
-                    //{
-                    //    previous.
-                    //});
-                    
+                    .Aggregate((accumulator, next) =>
+                    {
+                        accumulator.CPUCompileTime += next.CPUCompileTime;
+                        accumulator.ElapsedCompileTime += next.ElapsedCompileTime;
+                        accumulator.CPUExecutionTime += next.CPUExecutionTime;
+                        accumulator.ElapsedExecutionTime += next.ElapsedExecutionTime;
+                        accumulator.Scan += next.Scan;
+                        accumulator.Physical += next.Physical;
+                        accumulator.Logical += next.Logical;
+                        accumulator.LobLogical += next.LobLogical;
+                        accumulator.LobPhysical += next.LobPhysical;
+                        accumulator.LobReadAhead += next.LobReadAhead;
+                        accumulator.PercentRead += next.PercentRead;
+                        accumulator.ReadAhead += next.ReadAhead;
+
+                        return accumulator;
+                    });
+
+                var test2Totals = test2Results.SelectMany(t => t)
+                    .SelectMany(t => t.QueryStatistics)
+                    .Cast<QueryStats>()
+                    .Select(r => new QueryStatTotals
+                    {
+                        CPUCompileTime = r.CompileTimes.Sum(i => i.CPU),
+                        ElapsedCompileTime = r.CompileTimes.Sum(i => i.Elapsed),
+                        CPUExecutionTime = r.ExecutionTimes.Sum(i => i.CPU),
+                        ElapsedExecutionTime = r.ExecutionTimes.Sum(i => i.Elapsed),
+                        Scan = r.IOStatistics.Sum(i => i.Scan),
+                        Physical = r.IOStatistics.Sum(i => i.Physical),
+                        Logical = r.IOStatistics.Sum(i => i.Logical),
+                        LobLogical = r.IOStatistics.Sum(i => i.LobLogical),
+                        LobPhysical = r.IOStatistics.Sum(i => i.LobPhysical),
+                        LobReadAhead = r.IOStatistics.Sum(i => i.LobReadAhead),
+                        PercentRead = r.IOStatistics.Sum(i => i.PercentRead),
+                        ReadAhead = r.IOStatistics.Sum(i => i.ReadAhead)
+                    })
+                    .Aggregate((accumulator, next) =>
+                    {
+                        accumulator.CPUCompileTime += next.CPUCompileTime;
+                        accumulator.ElapsedCompileTime += next.ElapsedCompileTime;
+                        accumulator.CPUExecutionTime += next.CPUExecutionTime;
+                        accumulator.ElapsedExecutionTime += next.ElapsedExecutionTime;
+                        accumulator.Scan += next.Scan;
+                        accumulator.Physical += next.Physical;
+                        accumulator.Logical += next.Logical;
+                        accumulator.LobLogical += next.LobLogical;
+                        accumulator.LobPhysical += next.LobPhysical;
+                        accumulator.LobReadAhead += next.LobReadAhead;
+                        accumulator.PercentRead += next.PercentRead;
+                        accumulator.ReadAhead += next.ReadAhead;
+
+                        return accumulator;
+                    });
+
+                test1Totals.TestRunIdentifier = "Test 1";
+                test2Totals.TestRunIdentifier = "Test 2";
+
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.WriteLine(test1Totals.ToString());
+                Console.ResetColor();
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                Console.Write(test2Totals.ToString());
+                Console.ResetColor();
             }
         }
 
