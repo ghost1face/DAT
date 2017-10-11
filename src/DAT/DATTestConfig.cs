@@ -8,7 +8,11 @@
             Iterations = 3;
         }
 
+        public string PreTest1SQL { get; set; }
+
         public string Test1SQL { get; set; }
+
+        public string PreTest2SQL { get; set; }
 
         public string Test2SQL { get; set; }
 

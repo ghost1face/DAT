@@ -71,6 +71,8 @@ namespace DAT
                     SqlQuery = ResolveQuery(command.TestRunConfig.Test1SQL)
                 };
 
+                // EXECUTE PRE-TEST SCRIPT/COMMAND
+
                 for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
                 {
                     tasks.Add(RunThreadTest(testRunParams, logger, cancellationToken: cancellationToken));
@@ -89,6 +91,8 @@ namespace DAT
                     Iterations = command.TestRunConfig.Iterations,
                     SqlQuery = ResolveQuery(command.TestRunConfig.Test2SQL)
                 };
+
+                // EXECUTE PRE-TEST SCRIPT/COMMAND
 
                 for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
                 {
