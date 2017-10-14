@@ -23,10 +23,10 @@ namespace DAT
         {
             Console.CancelKeyPress += Console_CancelKeyPress;
 
+            var command = new DATCommand();
+
             try
             {
-                var command = new DATCommand();
-
                 Parser.ParseArguments(command, args);
 
                 using (var logger = new SimpleLogger(command.LoggingLevel, command.LogPath))
@@ -40,7 +40,7 @@ namespace DAT
             }
             catch (Exception ex)
             {
-
+                Console.WriteLine(command.PrintUsage());
             }
         }
 
@@ -51,11 +51,9 @@ namespace DAT
 
         private static async Task RunTest(DATCommand command, ILogger logger, CancellationToken cancellationToken)
         {
-            // create threads with delegate
-            // each delegate iterate for iterations variable
-            // parse performance stats, if compare perform data compare
+            // TODO: Simplify & Remove Repetitive Code
 
-            logger.Log(LogLevel.Detailed, $"Beginning test with {command.TestRunConfig.ThreadCount} threads, {command.TestRunConfig.Iterations} iterations.");
+            logger.Log(LogLevel.Minimal, $"Beginning test with {command.TestRunConfig.ThreadCount} threads, {command.TestRunConfig.Iterations} iterations.");
 
             var dataCompare = command.DataCompare;
             var performanceProfile = command.PerformanceProfile;
@@ -63,7 +61,6 @@ namespace DAT
             IEnumerable<DATCommandResult>[] test1Results;
             // Test Run #1
             {
-                var tasks = new List<Task<IEnumerable<DATCommandResult>>>();
                 var testRunParams = new DATTestParameters
                 {
                     ConnectionString = command.TestRunConfig.Test1ConnectionString,
@@ -71,20 +68,12 @@ namespace DAT
                     SqlQuery = ResolveQuery(command.TestRunConfig.Test1SQL)
                 };
 
-                // EXECUTE PRE-TEST SCRIPT/COMMAND
-
-                for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
-                {
-                    tasks.Add(RunThreadTest(testRunParams, logger, cancellationToken: cancellationToken));
-                }
-
-                test1Results = await Task.WhenAll(tasks);
+                test1Results = await RunTestGroup(testRunParams, ResolveQuery(command.TestRunConfig.PreTest1SQL), command.TestRunConfig.ThreadCount, logger, cancellationToken: cancellationToken);
             }
 
             IEnumerable<DATCommandResult>[] test2Results;
             // Test Run #2
             {
-                var tasks = new List<Task<IEnumerable<DATCommandResult>>>();
                 var testRunParams = new DATTestParameters
                 {
                     ConnectionString = command.TestRunConfig.Test2ConnectionString,
@@ -92,14 +81,7 @@ namespace DAT
                     SqlQuery = ResolveQuery(command.TestRunConfig.Test2SQL)
                 };
 
-                // EXECUTE PRE-TEST SCRIPT/COMMAND
-
-                for (int i = 0; i < command.TestRunConfig.ThreadCount; i++)
-                {
-                    tasks.Add(RunThreadTest(testRunParams, logger, cancellationToken: cancellationToken));
-                }
-
-                test2Results = await Task.WhenAll(tasks);
+                test2Results = await RunTestGroup(testRunParams, ResolveQuery(command.TestRunConfig.PreTest2SQL), command.TestRunConfig.ThreadCount, logger, cancellationToken: cancellationToken);
             }
 
             // now we can compare performance or data
@@ -191,6 +173,21 @@ namespace DAT
                 Console.Write(test2Totals.ToString());
                 Console.ResetColor();
             }
+        }
+
+        private static async Task<IEnumerable<DATCommandResult>[]> RunTestGroup(DATTestParameters testRunParams, string preTestSql, int threadCount, ILogger logger, CancellationToken cancellationToken)
+        {
+            var tasks = new List<Task<IEnumerable<DATCommandResult>>>();
+
+            // Execute Pre-Test Script/Command
+            logger.Log(LogLevel.Minimal, "Executing pre-test script command...");
+            if (!string.IsNullOrWhiteSpace(preTestSql))
+                await RunSqlQuery(preTestSql, testRunParams.ConnectionString, cancellationToken: cancellationToken);
+
+            for (int i = 0; i < threadCount; i++)
+                tasks.Add(RunThreadTest(testRunParams, logger, cancellationToken: cancellationToken));
+
+            return await Task.WhenAll(tasks);
         }
 
         private static async Task<IEnumerable<DATCommandResult>> RunThreadTest(DATTestParameters parameters, ILogger logger, CancellationToken cancellationToken)
