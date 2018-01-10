@@ -3,17 +3,17 @@
     public class QueryStatTotals
     {
         public string TestRunIdentifier { get; set; }
-        public int CPUCompileTime { get; set; }
-        public int ElapsedCompileTime { get; set; }
-        public int CPUExecutionTime { get; set; }
-        public int ElapsedExecutionTime { get; set; }
-        public int Scan { get; set; }
-        public int Logical { get; set; }
-        public int Physical { get; set; }
-        public int ReadAhead { get; set; }
-        public int LobLogical { get; set; }
-        public int LobPhysical { get; set; }
-        public int LobReadAhead { get; set; }
+        public double CPUCompileTime { get; set; }
+        public double ElapsedCompileTime { get; set; }
+        public double CPUExecutionTime { get; set; }
+        public double ElapsedExecutionTime { get; set; }
+        public double Scan { get; set; }
+        public double Logical { get; set; }
+        public double Physical { get; set; }
+        public double ReadAhead { get; set; }
+        public double LobLogical { get; set; }
+        public double LobPhysical { get; set; }
+        public double LobReadAhead { get; set; }
         public decimal PercentRead { get; set; }
 
         public override string ToString()

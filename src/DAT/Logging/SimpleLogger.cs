@@ -22,6 +22,8 @@ namespace DAT.Logging
             {
                 lock (syncLock)
                 {
+                    Console.WriteLine($"{DateTime.Now}\t{level}\t{message}"); // write to console for now as well
+
                     textWriter.WriteLine($"{DateTime.Now}\t{level}\t{message}");
                     textWriter.Flush();
                 }

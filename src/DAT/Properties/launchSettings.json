@@ -2,7 +2,7 @@
   "profiles": {
     "DAT": {
       "commandName": "Project",
-      "commandLineArgs": "-p -c -v=q -d=C:\\code\\DAT\\src\\TestConfig.json"
+      "commandLineArgs": "-p -c -v=d -d=..\\TestConfig.json"
     }
   }
 }
