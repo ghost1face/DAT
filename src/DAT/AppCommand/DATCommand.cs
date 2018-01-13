@@ -40,7 +40,7 @@ namespace DAT.AppCommand
 
         private void SetDefaults()
         {
-            LoggingLevel = LogLevel.Minimal;
+            LoggingLevel = LogLevel.Detailed;
             ApplicationName = "dat";
             LogPath = Path.Combine(Environment.CurrentDirectory, $"{ApplicationName}.log");
             TestRunConfig = null;

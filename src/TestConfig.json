@@ -1,10 +1,17 @@
 {
   "threadCount": 5,
-  "iterations": 20,
-  "preTest1Sql":  "",
-  "test1Sql": "SELECT * FROM dbo.Users WHERE Id IN (1, 2, 50, 200, 289, 742, 58, 3, 058, 572)",
-  "test1ConnectionString": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=TestDB;Integrated Security=true;",
-  "preTest2Sql": "",
-  "test2Sql": "SELECT * FROM dbo.Users u INNER JOIN (SELECT Id = 1\tUNION \t\tSELECT Id = 2\t\tUNION\t\tSELECT Id = 50\t\tUNION\t\tSELECT Id = 200\t\tUNION\t\tSELECT Id = 289\t\tUNION\t\tSELECT Id = 742\t\tUNION\t\tSELECT Id = 58\t\tUNION\t\tSELECT Id = 3\t\tUNION\t\tSELECT Id = 58\t\tUNION \t\tSELECT Id = 572\t) e ON u.Id = e.Id",
-  "test2ConnectionString": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=TestDB;Integrated Security=true;"
+  "iterations": 100,
+
+  "tests": [
+    {
+      "preSql": "",
+      "sql": "SELECT TOP 100 * FROM dbo.DimAccount",
+      "connectionString": "Data Source=localhost;Initial Catalog=AdventureWorksDW2014;Integrated Security=true;"
+    },
+    {
+      "preSql": "",
+      "sql": "SELECT TOP 100 * FROM dbo.DimAccount",
+      "connectionString": "Data Source=localhost;Initial Catalog=AdventureWorksDW2014;Integrated Security=true;"
+    }
+  ]
 }
