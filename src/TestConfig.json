@@ -1,10 +1,17 @@
 {
   "threadCount": 5,
   "iterations": 100,
-  "preTest1Sql": "",
-  "test1Sql": "SELECT TOP 100 * FROM dbo.DimAccount",
-  "test1ConnectionString": "Data Source=localhost;Initial Catalog=AdventureWorksDW2014;Integrated Security=true;",
-  "preTest2Sql": "",
-  "test2Sql": "SELECT TOP 100 * FROM dbo.DimAccount",
-  "test2ConnectionString": "Data Source=localhost;Initial Catalog=AdventureWorksDW2014;Integrated Security=true;"
+
+  "tests": [
+    {
+      "preSql": "",
+      "sql": "SELECT TOP 100 * FROM dbo.DimAccount",
+      "connectionString": "Data Source=localhost;Initial Catalog=AdventureWorksDW2014;Integrated Security=true;"
+    },
+    {
+      "preSql": "",
+      "sql": "SELECT TOP 100 * FROM dbo.DimAccount",
+      "connectionString": "Data Source=localhost;Initial Catalog=AdventureWorksDW2014;Integrated Security=true;"
+    }
+  ]
 }
